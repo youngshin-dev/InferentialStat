@@ -9,12 +9,13 @@ from statsmodels.formula.api import ols
 from statsmodels.graphics.factorplots import interaction_plot
 
 
-# 두 그룹간의 방문수에 차이가 있는지 통계적으로 검증
-# T test 가 필요함
-# alpha = 0.05
-# null hypothesis: 그룹1과 그룹2 의 population mean 이 동일하다
-# alternative hypothesis: 그룹1과 그룹2의 population mean 이 동일하지 않다
-# Assumptions:
+# statistically test if there is any difference in the number of clicks
+# We first consider two tailed two sample t test  with alpha = 0.05 with the following hypothesis
+# null hypothesis: population mean in group 1 and grou2 are equal
+# alternative hypothesis: population mean in group 1 and group 2 are not the same
+# Assumptions: To do t test we need that the two populations are normally distributed and
+# they have the equal variance. We will test these assumptions and apply appropriate hypothesis testing.
+
 
 
 def get_users_data():
@@ -29,14 +30,14 @@ if __name__ == '__main__':
         group_data = get_users_data()
         visit_data = get_user_visit_data()
 
-        #데이터의 형태를 살피기
+        #Explore the shape of the data
 
         print("Shape of group data:",group_data.shape)
         print("Shape of visit data",visit_data.shape)
         print("Number of unique carrier",group_data['carrier'].nunique())
         print("Number of Nan in visits column: ",visit_data['visits'].isnull().sum())
 
-        # 두 그룹간의 방문수 차이를 비교하기 위해 두 데이터 프래임을 유저 아이디를 기준으로 합침
+        # Merge two data frame by user id
         merged_df = pd.merge(group_data, visit_data, on ='user_uuid')
 
         # 한글이 플롯에 인식되지 않아 영어로 변환
@@ -44,20 +45,20 @@ if __name__ == '__main__':
         merged_df.loc[merged_df['carrier'] == "노랑", 'carrier'] = "yellow"
         merged_df.loc[merged_df['carrier'] == "보라", 'carrier'] = "purple"
 
-        # 필요한 열만 선택
+        # Select only the necessary columns
         group_visit = merged_df[['carrier','group','visits']]
 
-        # 방문 수의 히스토그램을 그려본 결과 heavily right skewed 돼있음
-        # 그룹1과 2의 데이터를 분리하여 각각 로그 스케일로 전환하여 skewedness 를 줄임
+        # Histogram of the number of clicks shows heavily right skewed
+        # Separate group1 and group2 data and apply log to reduce skewness
 
-        # 그룹1의 데이터
+        # Group 1
         group_1_visits = group_visit[group_visit['group'] == "group_1"].copy()
         print("Size of group_1:",group_1_visits.shape)
 
         group_1_visits['positive'] = (1 + group_1_visits['visits']) / 2
         group_1_visits['logvisits1'] = np.log(group_1_visits['positive'])
 
-        # 그룹2의 데이터
+        # Group2
         group_2_visits = group_visit[group_visit['group'] == "group_2"].copy()
         print("Size of group_2:",group_2_visits.shape)
 
@@ -69,9 +70,7 @@ if __name__ == '__main__':
 
         #fig1 = hist_group_2.get_figure()
 
-        #fig1.savefig('/Users/yourearl82/PycharmProjects/RainistTest/figure2.pdf')
-
-        # 로그 스케일된 방문수의 히스토그램을 그룹1과 그룹2를 겹쳐 나타냄
+        # Overlayed histogram of log number of clicks for group 1 and group 2
 
         result_visits = pd.concat([group_1_visits['logvisits1'],group_2_visits['logvisits2']],axis=1)
 
