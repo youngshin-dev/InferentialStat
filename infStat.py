@@ -82,8 +82,8 @@ if __name__ == '__main__':
         # Apply appropriate test.
         print("############### t test for group 1 and group 2######################")
         print("P val for normality test of group_2 : ",stats.normaltest(group_2_visits['logvisits2'].values).pvalue)
-        # 로그 스케일로 변환한 후에도 normal distribution이 아님. 하지만 샘플 숫자가 많으므로 central limit theorem에 의해 문제 없음.
-        # 두 그룹의 variance가 같은지 테스트
+        # Not looking normal distribution even after transformation.
+        # Equal variance test
         # Null hypothesis: Two populations have the same variance
         print("Equal variance test for group_1 VS group_2 : ",stats.levene(group_1_visits['logvisits1'],group_2_visits['logvisits2']).pvalue)
         # P value is bigger than 0.05 : fail to reject null (two populations probably have equal variance)
@@ -95,8 +95,7 @@ if __name__ == '__main__':
 
         print("Mann Whitney U test for group_1 VS group_2 :",stats.mannwhitneyu(group_1_visits['logvisits1'], group_2_visits['logvisits2']).pvalue)
 
-        # 각각의 테스트에서 p value가 alpha 보다 크므로 fail to reject null hypotheis.
-        # t test결과 두 그룹의 population mean 이 같을 확률이 크다.
+        # In each test, p value greater than alpha:fail to reject null hypotheis.
 
         print("######## Compare the difference in the number of visits in group_1 and group_2 in each of G,Y,V carriers")
 
