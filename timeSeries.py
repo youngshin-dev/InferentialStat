@@ -15,9 +15,9 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer
 
-# 하루당 총 방문수를 시계열로 예측
+# Predict the total number of visits per day using time series
 
-# 평가 지표를 모아놓은 함수
+# Some evaluation metrics
 def regression_results(y_true, y_pred):
     explained_variance=metrics.explained_variance_score(y_true, y_pred)
     mean_absolute_error=metrics.mean_absolute_error(y_true, y_pred)
@@ -54,15 +54,14 @@ if __name__ == '__main__':
 
         merged_df['date_joined'] = pd.to_datetime(merged_df.date_joined, format="%Y/%m/%d")
 
-        # 히스토그램으로 각 월당 데이터가 얼마나 많은지 확인
+        # Compare how much data in each month by looking at histogram
 
         counts, bins = np.histogram(pd.DatetimeIndex(merged_df['date_joined']).month)
         plt.hist(bins[:-1], bins, weights=counts)
         plt.show()
 
-
-        # 2월달 이전의 데이터가 많지 않고 또한 가입일자와 총 방문 수의 라인 그래프를 그려본 결과 2월 이전의 그래프가 패턴이 없어
-        # 모델 퍼포먼스를 올리기 위해 2월 이전의 데이터를 빼기로 함
+        # Not much data before February. No pattern in line graph before February.
+        # Remove data before February.
         df_age_negative = merged_df[merged_df['date_joined'] < datetime.strptime('2030/02/15', "%Y/%m/%d") ]
         merged_df = merged_df.drop(df_age_negative.index, axis=0)
 
@@ -72,16 +71,16 @@ if __name__ == '__main__':
         merged_df['visits'] =  np.log(1+merged_df['visits'])
 
 
-        # 없는 날짜들이 있으므로 전날의 평균 방문수로 forward filling
+        #  forward filling with average visits of the day before as there are missing dates
 
         daily_visit1 = merged_df.asfreq('D',method = 'ffill')
 
 
-        # 시계열 데이터를 담을 데이터 프래임 설정
+        # Dataframe that will contain the time series data.
         daily_visit2 = daily_visit1[['visits']]
-        # 하루 전의 방문수를 담을 열
+        # column for the number of visits the day before.
         daily_visit2.loc[:, 'Yesterday'] = daily_visit2.loc[:, 'visits'].shift()
-        # 하루 전과 이틀 전의 방문수 차이를 담을 열
+        # column for the difference between the visits of a day before and two days before
         daily_visit2.loc[:, 'Yesterday_Diff'] = daily_visit2.loc[:, 'Yesterday'].diff()
 
         daily_visit2 = daily_visit2.dropna()
@@ -100,12 +99,12 @@ if __name__ == '__main__':
         models.append(('SVR', SVR(gamma='auto')))
 
 
-        # 크로스 발리데이션으로 각각의 모델을 비교
+        # Compare each modle with cross validation
         results = []
         names = []
         print("#####################Cross validation comparison between models############################")
         for name, model in models:
-            # 시계열 크로스 발리데이션
+
             tscv = TimeSeriesSplit(n_splits=4)
 
             cv_results = cross_val_score(model, X_train, y_train, cv=tscv, scoring='r2')
@@ -113,16 +112,16 @@ if __name__ == '__main__':
             names.append(name)
             print('%s: %f (%f)' % (name, cv_results.mean(), cv_results.std()))
 
-        # 모델들을 박스 플롯으로 비교
+        # compare each model performance with box plot
         plt.boxplot(results, labels=names)
         plt.title('Algorithm Comparison')
         plt.show()
 
 
-        # 크로스 발리데이션으로 선정한 가장 좋은 모델로 핏
+        # Fit with the best model
         reg = LinearRegression().fit(X_train, y_train)
 
-        # 테스트 데이터로 예측하고 평가 지표 계산
+
         print("###############Liner regression prediction score###################")
         y_true = y_test.values
         y_pred = reg.predict(X_test)
